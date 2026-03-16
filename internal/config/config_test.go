@@ -142,3 +142,130 @@ services:
 		t.Error("expected error for negative price")
 	}
 }
+
+func TestParseZeroPriceDefaultsToOne(t *testing.T) {
+	yml := `
+services:
+  - name: "my-api"
+    hostregexp: "api.example.com"
+    pathregexp: "/v1/.*"
+`
+	cfg, err := Parse([]byte(yml))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := cfg.Services[0]
+	if s.Price != DefaultServicePrice {
+		t.Errorf("price = %d, want %d (Aperture default)", s.Price, DefaultServicePrice)
+	}
+}
+
+func TestParseZeroPriceWithDynamicPricingStaysZero(t *testing.T) {
+	yml := `
+services:
+  - name: "dynamic-api"
+    hostregexp: "api.example.com"
+    pathregexp: "/v1/.*"
+    dynamicprice:
+      enabled: true
+      grpcaddress: "localhost:10010"
+`
+	cfg, err := Parse([]byte(yml))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := cfg.Services[0]
+	if s.Price != 0 {
+		t.Errorf("price = %d, want 0 for dynamic pricing service", s.Price)
+	}
+}
+
+func TestParseAuth(t *testing.T) {
+	yml := `
+services:
+  - name: "api"
+    hostregexp: "api.example.com"
+    pathregexp: "/v1/.*"
+    price: 100
+    auth: "freebie 5"
+`
+	cfg, err := Parse([]byte(yml))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Services[0].Auth != "freebie 5" {
+		t.Errorf("auth = %q, want %q", cfg.Services[0].Auth, "freebie 5")
+	}
+}
+
+func TestParseAuthOff(t *testing.T) {
+	yml := `
+services:
+  - name: "api"
+    hostregexp: "api.example.com"
+    pathregexp: "/v1/.*"
+    price: 100
+    auth: "off"
+`
+	cfg, err := Parse([]byte(yml))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Services[0].Auth != "off" {
+		t.Errorf("auth = %q, want %q", cfg.Services[0].Auth, "off")
+	}
+}
+
+func TestParseAuthDefault(t *testing.T) {
+	yml := `
+services:
+  - name: "api"
+    hostregexp: "api.example.com"
+    pathregexp: "/v1/.*"
+    price: 100
+`
+	cfg, err := Parse([]byte(yml))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Services[0].Auth != "" {
+		t.Errorf("auth = %q, want empty (default)", cfg.Services[0].Auth)
+	}
+}
+
+func TestParseTimeout(t *testing.T) {
+	yml := `
+services:
+  - name: "api"
+    hostregexp: "api.example.com"
+    pathregexp: "/v1/.*"
+    price: 100
+    timeout: 3600
+`
+	cfg, err := Parse([]byte(yml))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Services[0].Timeout != 3600 {
+		t.Errorf("timeout = %d, want 3600", cfg.Services[0].Timeout)
+	}
+}
+
+func TestParseAuthUnrecognisedWarns(t *testing.T) {
+	yml := `
+services:
+  - name: "api"
+    hostregexp: "api.example.com"
+    pathregexp: "/v1/.*"
+    price: 100
+    auth: "maybe"
+`
+	cfg, err := Parse([]byte(yml))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Unrecognised auth values are stored as-is. Warning emitted by caller.
+	if cfg.Services[0].Auth != "maybe" {
+		t.Errorf("auth = %q, want %q", cfg.Services[0].Auth, "maybe")
+	}
+}

@@ -7,6 +7,12 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
+const (
+	// DefaultServicePrice matches Aperture's default — when no price is
+	// set and dynamic pricing is off, Aperture charges 1 sat.
+	DefaultServicePrice int64 = 1
+)
+
 // ApertureConfig holds only the fields we need from Aperture's YAML.
 type ApertureConfig struct {
 	Services []Service
@@ -20,6 +26,8 @@ type Service struct {
 	Price        int64
 	DynamicPrice bool
 	Capabilities []string
+	Auth         string
+	Timeout      int64
 }
 
 type rawService struct {
@@ -29,6 +37,8 @@ type rawService struct {
 	Price        int64       `yaml:"price"`
 	Capabilities string      `yaml:"capabilities"`
 	DynamicPrice rawDynPrice `yaml:"dynamicprice"`
+	Auth         string      `yaml:"auth"`
+	Timeout      int64       `yaml:"timeout"`
 }
 
 type rawDynPrice struct {
@@ -59,11 +69,19 @@ func Parse(data []byte) (*ApertureConfig, error) {
 		if rs.Price < 0 {
 			return nil, fmt.Errorf("service %q has negative price: %d", rs.Name, rs.Price)
 		}
+
+		price := rs.Price
+		if price == 0 && !rs.DynamicPrice.Enabled {
+			// Match Aperture's behaviour: default to 1 sat when no
+			// price is set and dynamic pricing is off.
+			price = DefaultServicePrice
+		}
+
 		s := Service{
 			Name:         rs.Name,
 			HostRegexp:   rs.HostRegexp,
 			PathRegexp:   rs.PathRegexp,
-			Price:        rs.Price,
+			Price:        price,
 			DynamicPrice: rs.DynamicPrice.Enabled,
 		}
 
@@ -75,6 +93,9 @@ func Parse(data []byte) (*ApertureConfig, error) {
 				}
 			}
 		}
+
+		s.Auth = rs.Auth
+		s.Timeout = rs.Timeout
 
 		services = append(services, s)
 	}
