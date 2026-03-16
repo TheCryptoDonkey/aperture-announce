@@ -72,7 +72,7 @@ aperture-announce
 ## Docker
 
 ```dockerfile
-FROM golang:1.22-alpine AS build
+FROM golang:1.24-alpine AS build
 RUN go install github.com/TheCryptoDonkey/aperture-announce/cmd/aperture-announce@latest
 
 FROM alpine:3.20
@@ -105,7 +105,7 @@ After publishing, verify your service appears on relays:
 
 ```bash
 # Dry-run first to check the event looks right
-aperture-announce --config aperture.yaml --public-url https://api.example.com --dry-run
+aperture-announce --config aperture.yaml --public-urls https://api.example.com --dry-run
 
 # After publishing, search via 402-mcp (if available)
 # Or query a relay directly for kind 31402 events

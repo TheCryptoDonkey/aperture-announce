@@ -102,14 +102,14 @@ Using `testdata/sample-conf.yaml`:
     ["about", "L402-gated API via Aperture — loop-rpc, pool-rpc"],
     ["pmi", "bitcoin-lightning-bolt11"],
     ["url", "https://api.example.com"],
-    ["t", "l402"],
-    ["t", "api"],
-    ["t", "aperture"],
     ["price", "quote", "500", "sats"],
     ["price", "swap", "500", "sats"],
-    ["price", "pool-rpc", "1000", "sats"]
+    ["price", "pool-rpc", "1000", "sats"],
+    ["t", "l402"],
+    ["t", "api"],
+    ["t", "aperture"]
   ],
-  "content": "{\"capabilities\":[{\"name\":\"quote\",\"description\":\"quote via loop-rpc\"},{\"name\":\"swap\",\"description\":\"swap via loop-rpc\"},{\"name\":\"pool-rpc\",\"description\":\"Access pool-rpc\"}]}"
+  "content": "{\"capabilities\":[{\"name\":\"quote\",\"description\":\"quote via loop-rpc\",\"auth\":\"freebie 3\",\"timeout\":3600},{\"name\":\"swap\",\"description\":\"swap via loop-rpc\",\"auth\":\"freebie 3\",\"timeout\":3600},{\"name\":\"pool-rpc\",\"description\":\"Access pool-rpc\"}]}"
 }
 ```
 
