@@ -34,6 +34,9 @@ aperture-announce --config aperture.yaml --public-url https://api.example.com --
 - **Aperture config parsing** — reads the `services` block from Aperture's YAML, extracting names, paths, prices, and capabilities.
 - **Announce key** — a Nostr signing key, auto-generated and persisted to `~/.aperture-announce/announce.key` if not provided.
 - **Relay publishing** — publishes to multiple relays concurrently; supports one-shot or interval-based re-publishing.
+- **Auth levels** — capabilities can specify authentication requirements: `"none"` (freely accessible), `"freebie N"` (N free requests before payment), or omitted (payment required).
+- **Token timeout** — capabilities can specify how long an L402 token remains valid via the `timeout` field (seconds).
+- **Dynamic pricing** — services using dynamic pricing have their `price` tag omitted and carry `"pricing": "dynamic"` in the content capabilities; a `dynamic-pricing` topic tag is added to the event.
 
 ## API Surface
 
@@ -51,11 +54,12 @@ Optional:
   --announce-key <hex>   Nostr signing key (auto-generated if omitted)
   --interval <duration>  Re-publish interval (e.g. 6h); default: one-shot
   --picture <url>        Service icon URL
+  --topics <tags>        Comma-separated custom topic tags (appended to defaults)
   --dry-run              Print event JSON without publishing
   --verbose              Verbose logging
 ```
 
-Environment variable fallbacks: `APERTURE_CONFIG`, `ANNOUNCE_RELAYS`, `PUBLIC_URL`, `ANNOUNCE_KEY`.
+Environment variable fallbacks: `APERTURE_CONFIG`, `ANNOUNCE_RELAYS`, `PUBLIC_URL`, `ANNOUNCE_KEY`, `ANNOUNCE_TOPICS`.
 
 ## Optional
 

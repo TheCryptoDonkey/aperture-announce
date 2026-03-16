@@ -25,7 +25,7 @@
     },
     "content": {
       "type": "string",
-      "description": "JSON-encoded capabilities object: {\"capabilities\": [{\"name\", \"description\", \"endpoint\"}]}."
+      "description": "JSON-encoded capabilities object: {\"capabilities\": [{\"name\", \"description\", \"endpoint\", \"pricing?\", \"auth?\", \"timeout?\"}]}."
     }
   },
   "definitions": {
@@ -88,7 +88,21 @@
             "properties": {
               "name": { "type": "string", "description": "Capability identifier" },
               "description": { "type": "string", "description": "Human-readable description" },
-              "endpoint": { "type": "string", "description": "Path regexp for this capability" }
+              "endpoint": { "type": "string", "description": "Cleaned base path for this capability (e.g. /v1/loop)" },
+              "pricing": {
+                "type": "string",
+                "enum": ["dynamic"],
+                "description": "Set to 'dynamic' when the price is determined at request time."
+              },
+              "auth": {
+                "type": "string",
+                "description": "Authentication level: 'none' (no auth), 'freebie N' (N free requests), or omitted (payment required)."
+              },
+              "timeout": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "L402 token validity in seconds. Omitted when no expiry."
+              }
             }
           }
         }

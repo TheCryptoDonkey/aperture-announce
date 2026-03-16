@@ -34,6 +34,9 @@ aperture-announce --config aperture.yaml --public-url https://api.example.com --
 - **Aperture config parsing** — reads the `services` block from Aperture's YAML, extracting names, paths, prices, and capabilities.
 - **Announce key** — a Nostr signing key, auto-generated and persisted to `~/.aperture-announce/announce.key` if not provided.
 - **Relay publishing** — publishes to multiple relays concurrently; supports one-shot or interval-based re-publishing.
+- **Auth levels** — capabilities can specify authentication requirements: `"none"` (freely accessible), `"freebie N"` (N free requests before payment), or omitted (payment required).
+- **Token timeout** — capabilities can specify how long an L402 token remains valid via the `timeout` field (seconds).
+- **Dynamic pricing** — services using dynamic pricing have their `price` tag omitted and carry `"pricing": "dynamic"` in the content capabilities; a `dynamic-pricing` topic tag is added to the event.
 
 ## CLI Reference
 
@@ -49,11 +52,12 @@ Optional:
   --announce-key <hex>   Nostr signing key (auto-generated if omitted)
   --interval <duration>  Re-publish interval (e.g. 6h); default: one-shot
   --picture <url>        Service icon URL
+  --topics <tags>        Comma-separated custom topic tags (appended to defaults)
   --dry-run              Print event JSON without publishing
   --verbose              Verbose logging
 ```
 
-Environment variable fallbacks: `APERTURE_CONFIG`, `ANNOUNCE_RELAYS`, `PUBLIC_URL`, `ANNOUNCE_KEY`.
+Environment variable fallbacks: `APERTURE_CONFIG`, `ANNOUNCE_RELAYS`, `PUBLIC_URL`, `ANNOUNCE_KEY`, `ANNOUNCE_TOPICS`.
 
 ## Kind 31402 Event Format
 
@@ -64,13 +68,15 @@ Kind 31402 is a **replaceable event** (NIP-33). The `d` tag serves as the unique
 | Tag | Format | Description |
 |-----|--------|-------------|
 | `d` | `["d", "aperture-<hostname>"]` | Replaceable event identifier, derived from the public URL hostname |
-| `name` | `["name", "<description>"]` | Human-readable service description with service names |
+| `name` | `["name", "<service-name>"]` | Short service name (e.g. `loop-rpc`) |
 | `url` | `["url", "<public-url>"]` | The URL agents use to reach the service |
-| `about` | `["about", "<description>"]` | Same as `name` — service summary |
+| `about` | `["about", "<description>"]` | Longer human-readable description of the service |
 | `pmi` | `["pmi", "bitcoin-lightning-bolt11"]` | Payment method indicator. Always Lightning for Aperture |
-| `t` | `["t", "<topic>"]` | Topic tags: `l402`, `api`, `aperture` |
-| `price` | `["price", "<cap>", "<amount>", "<currency>"]` | Positional price tag per capability |
+| `t` | `["t", "<topic>"]` | Topic tags: `l402`, `api`, `aperture`, plus any custom topics |
+| `price` | `["price", "<cap>", "<amount>", "<currency>"]` | Positional price tag per capability. Omitted for dynamically priced capabilities with no static fallback |
 | `picture` | `["picture", "<url>"]` | Optional service icon URL |
+
+The `endpoint` field in capabilities is a **cleaned base path** (e.g. `/v1/loop`) derived from the Aperture `pathregexp`, not the raw regexp string.
 
 ### Price Tags
 
@@ -85,7 +91,7 @@ Each capability from the Aperture config gets its own price tag. If a service ha
 
 ### Content Field
 
-The `content` field contains a JSON-encoded object listing capabilities with their endpoints:
+The `content` field contains a JSON-encoded object listing capabilities with their endpoints. Each capability supports optional fields for auth, timeout, and dynamic pricing:
 
 ```json
 {
@@ -93,16 +99,45 @@ The `content` field contains a JSON-encoded object listing capabilities with the
     {
       "name": "quote",
       "description": "quote via loop-rpc",
-      "endpoint": "/v1/loop/.*"
+      "endpoint": "/v1/loop",
+      "auth": "none",
+      "timeout": 3600
     },
     {
       "name": "swap",
       "description": "swap via loop-rpc",
-      "endpoint": "/v1/loop/.*"
+      "endpoint": "/v1/loop",
+      "pricing": "dynamic"
+    },
+    {
+      "name": "pool-rpc",
+      "description": "Access pool-rpc",
+      "endpoint": "/v1/pool",
+      "auth": "freebie 5"
     }
   ]
 }
 ```
+
+### Auth Field
+
+The optional `auth` field on a capability specifies its authentication requirement:
+
+- `"none"` — no authentication required; the endpoint is freely accessible
+- `"freebie N"` — the first N requests are free before payment is required (e.g. `"freebie 10"`)
+- omitted — payment is required (the default L402 behaviour)
+
+### Timeout Field
+
+The optional `timeout` field specifies the L402 token validity period in **seconds**. When omitted, tokens do not carry an expiry.
+
+### Dynamic Pricing
+
+When a capability's price is determined at request time rather than statically:
+
+- The capability carries `"pricing": "dynamic"` in the content JSON
+- The corresponding `price` tag is omitted from the event (unless a static fallback price is also configured)
+- A `["t", "dynamic-pricing"]` topic tag is added to the event to make dynamic-pricing services discoverable
 
 ### Mapping from Aperture Config
 
@@ -143,7 +178,7 @@ The `content` field contains a JSON-encoded object listing capabilities with the
     },
     "content": {
       "type": "string",
-      "description": "JSON-encoded capabilities object: {\"capabilities\": [{\"name\", \"description\", \"endpoint\"}]}."
+      "description": "JSON-encoded capabilities object: {\"capabilities\": [{\"name\", \"description\", \"endpoint\", \"pricing?\", \"auth?\", \"timeout?\"}]}."
     }
   },
   "definitions": {
@@ -206,7 +241,10 @@ The `content` field contains a JSON-encoded object listing capabilities with the
             "properties": {
               "name": { "type": "string", "description": "Capability identifier" },
               "description": { "type": "string", "description": "Human-readable description" },
-              "endpoint": { "type": "string", "description": "Path regexp for this capability" }
+              "endpoint": { "type": "string", "description": "Cleaned base path for this capability (e.g. /v1/loop)" },
+              "pricing": { "type": "string", "enum": ["dynamic"], "description": "Set to 'dynamic' when the price is determined at request time." },
+              "auth": { "type": "string", "description": "Authentication level: 'none' (no auth), 'freebie N' (N free requests), or omitted (payment required)." },
+              "timeout": { "type": "integer", "minimum": 0, "description": "L402 token validity in seconds. Omitted when no expiry." }
             }
           }
         }
@@ -225,7 +263,7 @@ Using a sample Aperture config with two services (loop-rpc and pool-rpc):
   "kind": 31402,
   "tags": [
     ["d", "aperture-api.example.com"],
-    ["name", "L402-gated API via Aperture — loop-rpc, pool-rpc"],
+    ["name", "loop-rpc, pool-rpc"],
     ["url", "https://api.example.com"],
     ["about", "L402-gated API via Aperture — loop-rpc, pool-rpc"],
     ["pmi", "bitcoin-lightning-bolt11"],
@@ -236,9 +274,11 @@ Using a sample Aperture config with two services (loop-rpc and pool-rpc):
     ["price", "swap", "500", "sats"],
     ["price", "pool-rpc", "1000", "sats"]
   ],
-  "content": "{\"capabilities\":[{\"name\":\"quote\",\"description\":\"quote via loop-rpc\",\"endpoint\":\"/v1/loop/.*\"},{\"name\":\"swap\",\"description\":\"swap via loop-rpc\",\"endpoint\":\"/v1/loop/.*\"},{\"name\":\"pool-rpc\",\"description\":\"Access pool-rpc\",\"endpoint\":\"/v1/pool/.*\"}]}"
+  "content": "{\"capabilities\":[{\"name\":\"quote\",\"description\":\"quote via loop-rpc\",\"endpoint\":\"/v1/loop\"},{\"name\":\"swap\",\"description\":\"swap via loop-rpc\",\"endpoint\":\"/v1/loop\"},{\"name\":\"pool-rpc\",\"description\":\"Access pool-rpc\",\"endpoint\":\"/v1/pool\"}]}"
 }
 ```
+
+(Fields `id`, `pubkey`, `created_at`, and `sig` omitted — they vary per run.)
 
 ## Ecosystem
 

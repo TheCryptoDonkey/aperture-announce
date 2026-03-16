@@ -41,11 +41,12 @@ Optional:
   --announce-key <hex>   Nostr signing key (auto-generated if omitted)
   --interval <duration>  Re-publish interval (e.g. 6h); default: one-shot
   --picture <url>        Service icon URL
+  --topics <tags>        Comma-separated custom topic tags (appended to defaults)
   --dry-run              Print event JSON without publishing
   --verbose              Verbose logging
 ```
 
-Environment variables: `APERTURE_CONFIG`, `ANNOUNCE_RELAYS`, `PUBLIC_URL`, `ANNOUNCE_KEY`.
+Environment variables: `APERTURE_CONFIG`, `ANNOUNCE_RELAYS`, `PUBLIC_URL`, `ANNOUNCE_KEY`, `ANNOUNCE_TOPICS`.
 
 ## How it works
 
