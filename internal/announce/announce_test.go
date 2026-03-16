@@ -16,7 +16,7 @@ func TestBuildEvent_SingleService(t *testing.T) {
 		},
 	}
 	sk := nostr.GeneratePrivateKey()
-	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicURL: "https://api.example.com"})
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,7 +43,7 @@ func TestBuildEvent_WithCapabilities(t *testing.T) {
 		},
 	}
 	sk := nostr.GeneratePrivateKey()
-	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicURL: "https://api.example.com"})
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +72,7 @@ func TestBuildEvent_DynamicPricingNoPriceTag(t *testing.T) {
 		},
 	}
 	sk := nostr.GeneratePrivateKey()
-	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicURL: "https://api.example.com"})
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,7 +107,7 @@ func TestBuildEvent_DynamicPricingWithFallback(t *testing.T) {
 		},
 	}
 	sk := nostr.GeneratePrivateKey()
-	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicURL: "https://api.example.com"})
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +135,7 @@ func TestBuildEvent_EndpointsCleaned(t *testing.T) {
 		},
 	}
 	sk := nostr.GeneratePrivateKey()
-	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicURL: "https://api.example.com"})
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -157,7 +157,7 @@ func TestBuildEvent_MultipleServices(t *testing.T) {
 		},
 	}
 	sk := nostr.GeneratePrivateKey()
-	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicURL: "https://api.example.com"})
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -173,7 +173,7 @@ func TestBuildEvent_WithPicture(t *testing.T) {
 		},
 	}
 	sk := nostr.GeneratePrivateKey()
-	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicURL: "https://api.example.com", Picture: "https://example.com/icon.png"})
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}, Picture: "https://example.com/icon.png"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,7 +188,7 @@ func TestBuildEvent_SignatureValid(t *testing.T) {
 		},
 	}
 	sk := nostr.GeneratePrivateKey()
-	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicURL: "https://api.example.com"})
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -237,7 +237,7 @@ func TestBuildEvent_NameAboutSplit(t *testing.T) {
 		},
 	}
 	sk := nostr.GeneratePrivateKey()
-	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicURL: "https://api.example.com"})
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -255,7 +255,7 @@ func TestBuildEvent_NameTruncation(t *testing.T) {
 	}
 	cfg := &config.ApertureConfig{Services: services}
 	sk := nostr.GeneratePrivateKey()
-	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicURL: "https://api.example.com"})
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -272,7 +272,7 @@ func TestBuildEvent_AuthInContent(t *testing.T) {
 		},
 	}
 	sk := nostr.GeneratePrivateKey()
-	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicURL: "https://api.example.com"})
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -307,7 +307,7 @@ func TestBuildEvent_TimeoutInContent(t *testing.T) {
 		},
 	}
 	sk := nostr.GeneratePrivateKey()
-	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicURL: "https://api.example.com"})
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -333,8 +333,8 @@ func TestBuildEvent_CustomTopics(t *testing.T) {
 	}
 	sk := nostr.GeneratePrivateKey()
 	ev, err := BuildEvent(sk, cfg, BuildOptions{
-		PublicURL: "https://api.example.com",
-		Topics:    []string{"ai", "inference", "l402"},
+		PublicUrls: []string{"https://api.example.com"},
+		Topics:     []string{"ai", "inference", "l402"},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -370,8 +370,8 @@ func TestBuildEvent_TopicCap(t *testing.T) {
 	}
 	sk := nostr.GeneratePrivateKey()
 	ev, err := BuildEvent(sk, cfg, BuildOptions{
-		PublicURL: "https://api.example.com",
-		Topics:    topics,
+		PublicUrls: []string{"https://api.example.com"},
+		Topics:     topics,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -385,6 +385,73 @@ func TestBuildEvent_TopicCap(t *testing.T) {
 	}
 	if tCount > 50 {
 		t.Errorf("topic tags should be capped at 50, got %d", tCount)
+	}
+}
+
+func TestBuildEvent_MultipleURLs(t *testing.T) {
+	cfg := &config.ApertureConfig{
+		Services: []config.Service{
+			{Name: "my-api", PathRegexp: "/v1/.*", Price: 100},
+		},
+	}
+	sk := nostr.GeneratePrivateKey()
+	urls := []string{
+		"https://api.example.com",
+		"https://onion.example.onion",
+		"https://hns.example",
+	}
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: urls})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// All three urls must appear as separate url tags.
+	for _, u := range urls {
+		assertTag(t, ev, "url", u)
+	}
+
+	// Identifier is derived from the first URL.
+	assertTag(t, ev, "d", "aperture-api.example.com")
+
+	// Count url tags — must be exactly 3.
+	urlCount := 0
+	for _, tag := range ev.Tags {
+		if len(tag) >= 1 && tag[0] == "url" {
+			urlCount++
+		}
+	}
+	if urlCount != 3 {
+		t.Errorf("expected 3 url tags, got %d", urlCount)
+	}
+}
+
+func TestBuildEvent_TooManyURLs(t *testing.T) {
+	cfg := &config.ApertureConfig{
+		Services: []config.Service{
+			{Name: "my-api", PathRegexp: "/v1/.*", Price: 100},
+		},
+	}
+	sk := nostr.GeneratePrivateKey()
+	urls := make([]string, 11)
+	for i := range urls {
+		urls[i] = fmt.Sprintf("https://api%d.example.com", i)
+	}
+	_, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: urls})
+	if err == nil {
+		t.Fatal("expected error for 11 URLs, got nil")
+	}
+}
+
+func TestBuildEvent_NoURLs(t *testing.T) {
+	cfg := &config.ApertureConfig{
+		Services: []config.Service{
+			{Name: "my-api", PathRegexp: "/v1/.*", Price: 100},
+		},
+	}
+	sk := nostr.GeneratePrivateKey()
+	_, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: nil})
+	if err == nil {
+		t.Fatal("expected error for no URLs, got nil")
 	}
 }
 

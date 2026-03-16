@@ -16,7 +16,7 @@ go install github.com/TheCryptoDonkey/aperture-announce/cmd/aperture-announce@la
 aperture-announce \
   --config /path/to/aperture.yaml \
   --relays wss://relay.damus.io,wss://nos.lol \
-  --public-url https://api.example.com
+  --public-urls https://api.example.com
 ```
 
 ## Why aperture-announce?
@@ -33,20 +33,32 @@ If you already run [Aperture](https://github.com/lightninglabs/aperture), this i
 aperture-announce [flags]
 
 Required:
-  --config <path>        Path to Aperture YAML config
-  --relays <urls>        Comma-separated Nostr relay URLs
-  --public-url <url>     Public URL agents will use to reach your service
+  --config <path>         Path to Aperture YAML config
+  --relays <urls>         Comma-separated Nostr relay URLs
+  --public-urls <urls>    Comma-separated public URLs agents will use to reach your service (1–10)
 
 Optional:
-  --announce-key <hex>   Nostr signing key (auto-generated if omitted)
-  --interval <duration>  Re-publish interval (e.g. 6h); default: one-shot
-  --picture <url>        Service icon URL
-  --topics <tags>        Comma-separated custom topic tags (appended to defaults)
-  --dry-run              Print event JSON without publishing
-  --verbose              Verbose logging
+  --public-url <url>      Alias for --public-urls (single URL; backwards-compatible)
+  --announce-key <hex>    Nostr signing key (auto-generated if omitted)
+  --interval <duration>   Re-publish interval (e.g. 6h); default: one-shot
+  --picture <url>         Service icon URL
+  --topics <tags>         Comma-separated custom topic tags (appended to defaults)
+  --dry-run               Print event JSON without publishing
+  --verbose               Verbose logging
 ```
 
-Environment variables: `APERTURE_CONFIG`, `ANNOUNCE_RELAYS`, `PUBLIC_URL`, `ANNOUNCE_KEY`, `ANNOUNCE_TOPICS`.
+Environment variables: `APERTURE_CONFIG`, `ANNOUNCE_RELAYS`, `PUBLIC_URLS`, `PUBLIC_URL` (single-URL alias), `ANNOUNCE_KEY`, `ANNOUNCE_TOPICS`.
+
+To announce multiple endpoints (clearnet, .onion, Handshake name) for the same service:
+
+```bash
+aperture-announce \
+  --config /path/to/aperture.yaml \
+  --relays wss://relay.damus.io,wss://nos.lol \
+  --public-urls https://api.example.com,https://api.example.onion
+```
+
+Each URL produces a separate `url` tag in the kind 31402 event; agents try them in order.
 
 ## How it works
 
@@ -62,7 +74,7 @@ Agents discover your service via `l402_search("your service")` and can then pay 
 ```bash
 aperture-announce \
   --config aperture.yaml \
-  --public-url https://api.example.com \
+  --public-urls https://api.example.com \
   --dry-run
 ```
 
@@ -79,9 +91,9 @@ Using `testdata/sample-conf.yaml`:
   "tags": [
     ["d", "aperture-api.example.com"],
     ["name", "loop-rpc, pool-rpc"],
-    ["url", "https://api.example.com"],
     ["about", "L402-gated API via Aperture — loop-rpc, pool-rpc"],
     ["pmi", "bitcoin-lightning-bolt11"],
+    ["url", "https://api.example.com"],
     ["t", "l402"],
     ["t", "api"],
     ["t", "aperture"],

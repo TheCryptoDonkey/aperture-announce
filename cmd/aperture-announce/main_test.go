@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -163,10 +164,10 @@ func TestCLI_MissingPublicURL(t *testing.T) {
 	cmd := exec.Command(bin, "--config", configPath, "--dry-run")
 	out, err := cmd.CombinedOutput()
 	if err == nil {
-		t.Fatal("expected non-zero exit for missing --public-url")
+		t.Fatal("expected non-zero exit for missing --public-urls")
 	}
-	if !strings.Contains(string(out), "--public-url is required") {
-		t.Errorf("expected '--public-url is required' in output, got: %s", out)
+	if !strings.Contains(string(out), "--public-urls is required") {
+		t.Errorf("expected '--public-urls is required' in output, got: %s", out)
 	}
 }
 
@@ -223,6 +224,122 @@ func TestCLI_EnvVarFallback(t *testing.T) {
 	kind, ok := ev["kind"].(float64)
 	if !ok || int(kind) != 31402 {
 		t.Errorf("kind = %v, want 31402", ev["kind"])
+	}
+}
+
+func TestCLI_MultiplePublicURLs(t *testing.T) {
+	bin := buildBinary(t)
+	configPath, _ := filepath.Abs("../../testdata/sample-conf.yaml")
+
+	cmd := exec.Command(bin,
+		"--config", configPath,
+		"--public-urls", "https://api.example.com,https://onion.example.onion",
+		"--dry-run",
+	)
+	out, err := cmd.Output()
+	if err != nil {
+		if ee, ok := err.(*exec.ExitError); ok {
+			t.Fatalf("exit %d: %s", ee.ExitCode(), ee.Stderr)
+		}
+		t.Fatal(err)
+	}
+
+	var ev map[string]interface{}
+	if err := json.Unmarshal(out, &ev); err != nil {
+		t.Fatalf("output is not valid JSON: %v\n%s", err, out)
+	}
+
+	tags, ok := ev["tags"].([]interface{})
+	if !ok {
+		t.Fatal("tags is not an array")
+	}
+
+	// Collect all url tag values.
+	var urlValues []string
+	for _, tag := range tags {
+		arr, ok := tag.([]interface{})
+		if !ok || len(arr) < 2 {
+			continue
+		}
+		if arr[0].(string) == "url" {
+			urlValues = append(urlValues, arr[1].(string))
+		}
+	}
+
+	if len(urlValues) != 2 {
+		t.Fatalf("expected 2 url tags, got %d: %v", len(urlValues), urlValues)
+	}
+	if urlValues[0] != "https://api.example.com" {
+		t.Errorf("url[0] = %q, want %q", urlValues[0], "https://api.example.com")
+	}
+	if urlValues[1] != "https://onion.example.onion" {
+		t.Errorf("url[1] = %q, want %q", urlValues[1], "https://onion.example.onion")
+	}
+}
+
+func TestCLI_PublicURLsEnvVar(t *testing.T) {
+	bin := buildBinary(t)
+	configPath, _ := filepath.Abs("../../testdata/sample-conf.yaml")
+
+	cmd := exec.Command(bin, "--dry-run")
+	cmd.Env = append(os.Environ(),
+		"APERTURE_CONFIG="+configPath,
+		"PUBLIC_URLS=https://api.example.com,https://backup.example.com",
+	)
+	out, err := cmd.Output()
+	if err != nil {
+		if ee, ok := err.(*exec.ExitError); ok {
+			t.Fatalf("exit %d: %s", ee.ExitCode(), ee.Stderr)
+		}
+		t.Fatal(err)
+	}
+
+	var ev map[string]interface{}
+	if err := json.Unmarshal(out, &ev); err != nil {
+		t.Fatalf("output is not valid JSON: %v\n%s", err, out)
+	}
+
+	tags, ok := ev["tags"].([]interface{})
+	if !ok {
+		t.Fatal("tags is not an array")
+	}
+
+	urlCount := 0
+	for _, tag := range tags {
+		arr, ok := tag.([]interface{})
+		if !ok || len(arr) < 2 {
+			continue
+		}
+		if arr[0].(string) == "url" {
+			urlCount++
+		}
+	}
+	if urlCount != 2 {
+		t.Errorf("expected 2 url tags from PUBLIC_URLS env var, got %d", urlCount)
+	}
+}
+
+func TestCLI_TooManyPublicURLs(t *testing.T) {
+	bin := buildBinary(t)
+	configPath, _ := filepath.Abs("../../testdata/sample-conf.yaml")
+
+	// Build 11 comma-separated URLs.
+	var urls []string
+	for i := 0; i < 11; i++ {
+		urls = append(urls, fmt.Sprintf("https://api%d.example.com", i))
+	}
+
+	cmd := exec.Command(bin,
+		"--config", configPath,
+		"--public-urls", strings.Join(urls, ","),
+		"--dry-run",
+	)
+	out, err := cmd.CombinedOutput()
+	if err == nil {
+		t.Fatal("expected non-zero exit for 11 public URLs")
+	}
+	if !strings.Contains(string(out), "at most 10") {
+		t.Errorf("expected 'at most 10' in output, got: %s", out)
 	}
 }
 

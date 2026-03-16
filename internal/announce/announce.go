@@ -82,16 +82,26 @@ func authForEvent(auth string) string {
 
 // BuildOptions holds optional parameters for event construction.
 type BuildOptions struct {
-	PublicURL string
-	Picture   string
-	Topics    []string
+	// PublicUrls is the list of public URLs agents may use to reach the service.
+	// At least one URL is required; up to 10 are permitted.
+	PublicUrls []string
+	Picture    string
+	Topics     []string
 }
 
 // BuildEvent creates and signs a kind 31402 Nostr event from an Aperture config.
 func BuildEvent(secretKey string, cfg *config.ApertureConfig, opts BuildOptions) (*nostr.Event, error) {
-	u, err := url.Parse(opts.PublicURL)
+	if len(opts.PublicUrls) == 0 {
+		return nil, fmt.Errorf("at least one public URL is required")
+	}
+	if len(opts.PublicUrls) > 10 {
+		return nil, fmt.Errorf("at most 10 public URLs are permitted, got %d", len(opts.PublicUrls))
+	}
+
+	// Derive the identifier from the first URL's hostname.
+	u, err := url.Parse(opts.PublicUrls[0])
 	if err != nil {
-		return nil, fmt.Errorf("invalid public URL: %w", err)
+		return nil, fmt.Errorf("invalid public URL %q: %w", opts.PublicUrls[0], err)
 	}
 
 	identifier := "aperture-" + u.Hostname()
@@ -117,9 +127,13 @@ func BuildEvent(secretKey string, cfg *config.ApertureConfig, opts BuildOptions)
 	tags := nostr.Tags{
 		{"d", identifier},
 		{"name", name},
-		{"url", opts.PublicURL},
 		{"about", about},
 		{"pmi", "bitcoin-lightning-bolt11"},
+	}
+
+	// Emit one url tag per endpoint — agents try each in order.
+	for _, rawURL := range opts.PublicUrls {
+		tags = append(tags, nostr.Tag{"url", rawURL})
 	}
 
 	if opts.Picture != "" {

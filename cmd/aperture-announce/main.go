@@ -22,7 +22,8 @@ import (
 func main() {
 	configPath := flag.String("config", "", "Path to Aperture YAML config (required)")
 	relays := flag.String("relays", "", "Comma-separated relay URLs (required unless --dry-run)")
-	publicURL := flag.String("public-url", "", "Public URL for the service (required)")
+	publicURLs := flag.String("public-urls", "", "Comma-separated public URLs for the service (required; up to 10)")
+	publicURL := flag.String("public-url", "", "Public URL for the service (alias for --public-urls; backwards-compatible)")
 	announceKey := flag.String("announce-key", "", "Nostr secret key (64-char hex; auto-generated if omitted)")
 	interval := flag.Duration("interval", 0, "Re-publish interval (e.g. 6h); default: one-shot")
 	picture := flag.String("picture", "", "Optional service icon URL")
@@ -38,8 +39,15 @@ func main() {
 	if *relays == "" {
 		*relays = os.Getenv("ANNOUNCE_RELAYS")
 	}
+	if *publicURLs == "" {
+		*publicURLs = os.Getenv("PUBLIC_URLS")
+	}
+	// --public-url / PUBLIC_URL are backwards-compatible aliases for a single URL.
 	if *publicURL == "" {
 		*publicURL = os.Getenv("PUBLIC_URL")
+	}
+	if *publicURLs == "" && *publicURL != "" {
+		*publicURLs = *publicURL
 	}
 	if *announceKey == "" {
 		*announceKey = os.Getenv("ANNOUNCE_KEY")
@@ -52,8 +60,8 @@ func main() {
 	if *configPath == "" {
 		fatal("--config is required")
 	}
-	if *publicURL == "" {
-		fatal("--public-url is required — this is the URL agents will use to reach your service")
+	if *publicURLs == "" {
+		fatal("--public-urls is required — this is the URL agents will use to reach your service")
 	}
 	if !*dryRun && *relays == "" {
 		fatal("--relays is required (or use --dry-run to preview)")
@@ -62,9 +70,23 @@ func main() {
 		fatal("--interval and --dry-run cannot be combined")
 	}
 
-	// Validate public URL
-	if err := validate.ValidatePublicURL(*publicURL); err != nil {
-		fatal("invalid --public-url: %v", err)
+	// Parse and validate public URLs (comma-separated, max 10).
+	var urlList []string
+	for _, raw := range strings.Split(*publicURLs, ",") {
+		raw = strings.TrimSpace(raw)
+		if raw == "" {
+			continue
+		}
+		if err := validate.ValidatePublicURL(raw); err != nil {
+			fatal("invalid public URL %q: %v", raw, err)
+		}
+		urlList = append(urlList, raw)
+	}
+	if len(urlList) == 0 {
+		fatal("--public-urls is required — this is the URL agents will use to reach your service")
+	}
+	if len(urlList) > 10 {
+		fatal("--public-urls: at most 10 URLs are permitted, got %d", len(urlList))
 	}
 
 	// Validate picture URL if provided
@@ -134,9 +156,9 @@ func main() {
 	// Build and publish (loop or one-shot)
 	run := func() {
 		ev, err := announce.BuildEvent(sk, cfg, announce.BuildOptions{
-			PublicURL: *publicURL,
-			Picture:   *picture,
-			Topics:    topicList,
+			PublicUrls: urlList,
+			Picture:    *picture,
+			Topics:     topicList,
 		})
 		if err != nil {
 			fatal("build event: %v", err)
@@ -188,7 +210,7 @@ func main() {
 		}
 
 		fmt.Fprintf(os.Stderr, "Announced %s to %d/%d relay(s) (event %s)\n",
-			*publicURL, successCount, len(relayList), ev.ID[:12]+"...")
+			strings.Join(urlList, ", "), successCount, len(relayList), ev.ID[:12]+"...")
 	}
 
 	run()
