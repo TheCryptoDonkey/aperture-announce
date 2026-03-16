@@ -45,7 +45,7 @@
       "prefixItems": [{ "const": "url" }, { "type": "string", "format": "uri" }]
     },
     "about_tag": {
-      "description": "Service summary, same as name tag.",
+      "description": "Longer human-readable description of the service.",
       "type": "array",
       "prefixItems": [{ "const": "about" }, { "type": "string" }]
     },

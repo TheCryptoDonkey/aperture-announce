@@ -195,11 +195,11 @@ func main() {
 }
 
 func isRecognisedAuth(auth string) bool {
-	switch strings.ToLower(strings.TrimSpace(auth)) {
+	lower := strings.ToLower(strings.TrimSpace(auth))
+	switch lower {
 	case "", "on", "true", "off", "false":
 		return true
 	}
-	lower := strings.ToLower(strings.TrimSpace(auth))
 	if strings.HasPrefix(lower, "freebie ") {
 		rest := strings.TrimSpace(lower[len("freebie "):])
 		for _, c := range rest {

@@ -78,7 +78,7 @@ Using `testdata/sample-conf.yaml`:
   "kind": 31402,
   "tags": [
     ["d", "aperture-api.example.com"],
-    ["name", "L402-gated API via Aperture — loop-rpc, pool-rpc"],
+    ["name", "loop-rpc, pool-rpc"],
     ["url", "https://api.example.com"],
     ["about", "L402-gated API via Aperture — loop-rpc, pool-rpc"],
     ["pmi", "bitcoin-lightning-bolt11"],
@@ -89,7 +89,7 @@ Using `testdata/sample-conf.yaml`:
     ["price", "swap", "500", "sats"],
     ["price", "pool-rpc", "1000", "sats"]
   ],
-  "content": "{\"capabilities\":[{\"name\":\"quote\",\"description\":\"quote via loop-rpc\",\"endpoint\":\"/v1/loop/.*\"},{\"name\":\"swap\",\"description\":\"swap via loop-rpc\",\"endpoint\":\"/v1/loop/.*\"},{\"name\":\"pool-rpc\",\"description\":\"Access pool-rpc\",\"endpoint\":\"/v1/pool/.*\"}]}"
+  "content": "{\"capabilities\":[{\"name\":\"quote\",\"description\":\"quote via loop-rpc\",\"endpoint\":\"/v1/loop/\"},{\"name\":\"swap\",\"description\":\"swap via loop-rpc\",\"endpoint\":\"/v1/loop/\"},{\"name\":\"pool-rpc\",\"description\":\"Access pool-rpc\",\"endpoint\":\"/v1/pool/\"}]}"
 }
 ```
 

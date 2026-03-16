@@ -90,9 +90,9 @@ When a capability's price is determined at request time rather than statically:
 | `services[].pathregexp` | Cleaned to a base path → `endpoint` in content capabilities |
 | `services[].price` | Amount in `price` tags (omitted when `pricing: dynamic` and no static fallback) |
 | `services[].capabilities` | Comma-separated list → individual `price` tags and content capabilities |
-| `services[].capabilities[].auth` | `auth` field in content capability |
-| `services[].capabilities[].timeout` | `timeout` field in content capability |
-| `services[].capabilities[].pricing` | `pricing` field in content capability; adds `dynamic-pricing` topic tag |
+| `services[].auth` | `auth` field in content capabilities for that service |
+| `services[].timeout` | `timeout` field in content capabilities for that service |
+| `services[].dynamicprice.enabled` | `pricing: "dynamic"` in content capabilities; adds `dynamic-pricing` topic tag |
 
 ## Schema
 
