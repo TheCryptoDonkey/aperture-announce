@@ -210,12 +210,19 @@ func main() {
 	}
 
 	// Parse config (limit to 1 MB to prevent memory exhaustion from huge files).
+	const maxConfigSize = 1 << 20 // 1 MB
+	fi, err := os.Stat(f.configPath)
+	if err != nil {
+		fatal("stat config: %v", err)
+	}
+	if fi.Size() > maxConfigSize {
+		fatal("config file too large (%d bytes, max %d)", fi.Size(), maxConfigSize)
+	}
 	data, err := os.ReadFile(f.configPath)
 	if err != nil {
 		fatal("read config: %v", err)
 	}
-	const maxConfigSize = 1 << 20 // 1 MB
-	if len(data) > maxConfigSize {
+	if len(data) > maxConfigSize { // belt-and-braces guard
 		fatal("config file too large (%d bytes, max %d)", len(data), maxConfigSize)
 	}
 	cfg, err := config.Parse(data)
