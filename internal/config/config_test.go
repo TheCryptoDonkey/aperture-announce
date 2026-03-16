@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseSingleService(t *testing.T) {
@@ -14,22 +16,12 @@ services:
     price: 100
 `
 	cfg, err := Parse([]byte(yml))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(cfg.Services) != 1 {
-		t.Fatalf("expected 1 service, got %d", len(cfg.Services))
-	}
+	require.NoError(t, err)
+	require.Len(t, cfg.Services, 1)
 	s := cfg.Services[0]
-	if s.Name != "my-api" {
-		t.Errorf("name = %q, want %q", s.Name, "my-api")
-	}
-	if s.Price != 100 {
-		t.Errorf("price = %d, want 100", s.Price)
-	}
-	if s.PathRegexp != "/v1/.*" {
-		t.Errorf("pathregexp = %q, want %q", s.PathRegexp, "/v1/.*")
-	}
+	require.Equal(t, "my-api", s.Name)
+	require.Equal(t, int64(100), s.Price)
+	require.Equal(t, "/v1/.*", s.PathRegexp)
 }
 
 func TestParseMultipleServices(t *testing.T) {
@@ -45,12 +37,8 @@ services:
     price: 200
 `
 	cfg, err := Parse([]byte(yml))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(cfg.Services) != 2 {
-		t.Fatalf("expected 2 services, got %d", len(cfg.Services))
-	}
+	require.NoError(t, err)
+	require.Len(t, cfg.Services, 2)
 }
 
 func TestParseCapabilities(t *testing.T) {
@@ -63,16 +51,12 @@ services:
     capabilities: "read,write,admin"
 `
 	cfg, err := Parse([]byte(yml))
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	caps := cfg.Services[0].Capabilities
-	if len(caps) != 3 {
-		t.Fatalf("expected 3 capabilities, got %d", len(caps))
-	}
-	if caps[0] != "read" || caps[1] != "write" || caps[2] != "admin" {
-		t.Errorf("capabilities = %v", caps)
-	}
+	require.Len(t, caps, 3)
+	require.Equal(t, "read", caps[0])
+	require.Equal(t, "write", caps[1])
+	require.Equal(t, "admin", caps[2])
 }
 
 func TestParseDynamicPricing(t *testing.T) {
@@ -86,16 +70,10 @@ services:
       grpcaddress: "localhost:10010"
 `
 	cfg, err := Parse([]byte(yml))
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	s := cfg.Services[0]
-	if !s.DynamicPrice {
-		t.Error("expected DynamicPrice to be true")
-	}
-	if s.Price != 0 {
-		t.Errorf("expected Price 0 for dynamic, got %d", s.Price)
-	}
+	require.True(t, s.DynamicPrice)
+	require.Equal(t, int64(0), s.Price)
 }
 
 func TestParseNoServices(t *testing.T) {
@@ -103,9 +81,7 @@ func TestParseNoServices(t *testing.T) {
 listenaddr: "localhost:8081"
 `
 	_, err := Parse([]byte(yml))
-	if err == nil {
-		t.Error("expected error for config with no services")
-	}
+	require.Error(t, err)
 }
 
 func TestParseEmptyServices(t *testing.T) {
@@ -113,9 +89,7 @@ func TestParseEmptyServices(t *testing.T) {
 services: []
 `
 	_, err := Parse([]byte(yml))
-	if err == nil {
-		t.Error("expected error for empty services")
-	}
+	require.Error(t, err)
 }
 
 func TestParseEmptyServiceName(t *testing.T) {
@@ -127,9 +101,7 @@ services:
     price: 100
 `
 	_, err := Parse([]byte(yml))
-	if err == nil {
-		t.Error("expected error for empty service name")
-	}
+	require.Error(t, err)
 }
 
 func TestParseNegativePrice(t *testing.T) {
@@ -141,9 +113,7 @@ services:
     price: -100
 `
 	_, err := Parse([]byte(yml))
-	if err == nil {
-		t.Error("expected error for negative price")
-	}
+	require.Error(t, err)
 }
 
 func TestParseZeroPriceDefaultsToOne(t *testing.T) {
@@ -154,13 +124,9 @@ services:
     pathregexp: "/v1/.*"
 `
 	cfg, err := Parse([]byte(yml))
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	s := cfg.Services[0]
-	if s.Price != DefaultServicePrice {
-		t.Errorf("price = %d, want %d (Aperture default)", s.Price, DefaultServicePrice)
-	}
+	require.Equal(t, DefaultServicePrice, s.Price)
 }
 
 func TestParseZeroPriceWithDynamicPricingStaysZero(t *testing.T) {
@@ -174,13 +140,9 @@ services:
       grpcaddress: "localhost:10010"
 `
 	cfg, err := Parse([]byte(yml))
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	s := cfg.Services[0]
-	if s.Price != 0 {
-		t.Errorf("price = %d, want 0 for dynamic pricing service", s.Price)
-	}
+	require.Equal(t, int64(0), s.Price)
 }
 
 func TestParseAuth(t *testing.T) {
@@ -193,12 +155,8 @@ services:
     auth: "freebie 5"
 `
 	cfg, err := Parse([]byte(yml))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cfg.Services[0].Auth != "freebie 5" {
-		t.Errorf("auth = %q, want %q", cfg.Services[0].Auth, "freebie 5")
-	}
+	require.NoError(t, err)
+	require.Equal(t, "freebie 5", cfg.Services[0].Auth)
 }
 
 func TestParseAuthOff(t *testing.T) {
@@ -211,12 +169,8 @@ services:
     auth: "off"
 `
 	cfg, err := Parse([]byte(yml))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cfg.Services[0].Auth != "off" {
-		t.Errorf("auth = %q, want %q", cfg.Services[0].Auth, "off")
-	}
+	require.NoError(t, err)
+	require.Equal(t, "off", cfg.Services[0].Auth)
 }
 
 func TestParseAuthDefault(t *testing.T) {
@@ -228,12 +182,8 @@ services:
     price: 100
 `
 	cfg, err := Parse([]byte(yml))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cfg.Services[0].Auth != "" {
-		t.Errorf("auth = %q, want empty (default)", cfg.Services[0].Auth)
-	}
+	require.NoError(t, err)
+	require.Equal(t, "", cfg.Services[0].Auth)
 }
 
 func TestParseTimeout(t *testing.T) {
@@ -246,12 +196,8 @@ services:
     timeout: 3600
 `
 	cfg, err := Parse([]byte(yml))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cfg.Services[0].Timeout != 3600 {
-		t.Errorf("timeout = %d, want 3600", cfg.Services[0].Timeout)
-	}
+	require.NoError(t, err)
+	require.Equal(t, int64(3600), cfg.Services[0].Timeout)
 }
 
 func TestParseNegativeTimeout(t *testing.T) {
@@ -264,9 +210,7 @@ services:
     timeout: -1
 `
 	_, err := Parse([]byte(yml))
-	if err == nil {
-		t.Error("expected error for negative timeout")
-	}
+	require.Error(t, err)
 }
 
 func TestParseTooManyServices(t *testing.T) {
@@ -279,9 +223,7 @@ func TestParseTooManyServices(t *testing.T) {
 		yml += "    price: 1\n"
 	}
 	_, err := Parse([]byte(yml))
-	if err == nil {
-		t.Error("expected error for too many services")
-	}
+	require.Error(t, err)
 }
 
 func TestParseExcessivePrice(t *testing.T) {
@@ -292,9 +234,7 @@ func TestParseExcessivePrice(t *testing.T) {
     price: 99999999999999
 `)
 	_, err := Parse(data)
-	if err == nil {
-		t.Fatal("expected error for excessive price")
-	}
+	require.Error(t, err)
 }
 
 func TestParseAuthUnrecognisedWarns(t *testing.T) {
@@ -307,11 +247,7 @@ services:
     auth: "maybe"
 `
 	cfg, err := Parse([]byte(yml))
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	// Unrecognised auth values are stored as-is. Warning emitted by caller.
-	if cfg.Services[0].Auth != "maybe" {
-		t.Errorf("auth = %q, want %q", cfg.Services[0].Auth, "maybe")
-	}
+	require.Equal(t, "maybe", cfg.Services[0].Auth)
 }

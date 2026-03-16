@@ -7,6 +7,7 @@ import (
 
 	"github.com/TheCryptoDonkey/aperture-announce/internal/config"
 	"github.com/nbd-wtf/go-nostr"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBuildEvent_SingleService(t *testing.T) {
@@ -17,13 +18,9 @@ func TestBuildEvent_SingleService(t *testing.T) {
 	}
 	sk := nostr.GeneratePrivateKey()
 	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	if ev.Kind != 31402 {
-		t.Errorf("kind = %d, want 31402", ev.Kind)
-	}
+	require.Equal(t, 31402, ev.Kind)
 
 	assertTag(t, ev, "d", "aperture-api.example.com")
 	assertTag(t, ev, "url", "https://api.example.com")
@@ -44,9 +41,7 @@ func TestBuildEvent_WithCapabilities(t *testing.T) {
 	}
 	sk := nostr.GeneratePrivateKey()
 	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	assertPriceTag(t, ev, "read", "100", "sats")
 	assertPriceTag(t, ev, "write", "100", "sats")
@@ -57,12 +52,9 @@ func TestBuildEvent_WithCapabilities(t *testing.T) {
 			Endpoint string `json:"endpoint"`
 		} `json:"capabilities"`
 	}
-	if err := json.Unmarshal([]byte(ev.Content), &content); err != nil {
-		t.Fatalf("content JSON: %v", err)
-	}
-	if len(content.Capabilities) != 2 {
-		t.Fatalf("expected 2 capabilities in content, got %d", len(content.Capabilities))
-	}
+	err = json.Unmarshal([]byte(ev.Content), &content)
+	require.NoError(t, err)
+	require.Len(t, content.Capabilities, 2)
 }
 
 func TestBuildEvent_DynamicPricingNoPriceTag(t *testing.T) {
@@ -73,9 +65,7 @@ func TestBuildEvent_DynamicPricingNoPriceTag(t *testing.T) {
 	}
 	sk := nostr.GeneratePrivateKey()
 	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	// Should NOT have a price tag (dynamic, no fallback)
 	for _, tag := range ev.Tags {
@@ -89,15 +79,10 @@ func TestBuildEvent_DynamicPricingNoPriceTag(t *testing.T) {
 
 	// Content should have pricing: "dynamic"
 	var content eventContent
-	if err := json.Unmarshal([]byte(ev.Content), &content); err != nil {
-		t.Fatal(err)
-	}
-	if len(content.Capabilities) != 1 {
-		t.Fatalf("expected 1 capability, got %d", len(content.Capabilities))
-	}
-	if content.Capabilities[0].Pricing != "dynamic" {
-		t.Errorf("pricing = %q, want %q", content.Capabilities[0].Pricing, "dynamic")
-	}
+	err = json.Unmarshal([]byte(ev.Content), &content)
+	require.NoError(t, err)
+	require.Len(t, content.Capabilities, 1)
+	require.Equal(t, "dynamic", content.Capabilities[0].Pricing)
 }
 
 func TestBuildEvent_DynamicPricingWithFallback(t *testing.T) {
@@ -108,9 +93,7 @@ func TestBuildEvent_DynamicPricingWithFallback(t *testing.T) {
 	}
 	sk := nostr.GeneratePrivateKey()
 	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	// Should still have a price tag (static fallback)
 	assertPriceTag(t, ev, "api", "500", "sats")
@@ -120,12 +103,9 @@ func TestBuildEvent_DynamicPricingWithFallback(t *testing.T) {
 
 	// Content should have pricing: "dynamic"
 	var content eventContent
-	if err := json.Unmarshal([]byte(ev.Content), &content); err != nil {
-		t.Fatal(err)
-	}
-	if content.Capabilities[0].Pricing != "dynamic" {
-		t.Errorf("pricing = %q, want %q", content.Capabilities[0].Pricing, "dynamic")
-	}
+	err = json.Unmarshal([]byte(ev.Content), &content)
+	require.NoError(t, err)
+	require.Equal(t, "dynamic", content.Capabilities[0].Pricing)
 }
 
 func TestBuildEvent_EndpointsCleaned(t *testing.T) {
@@ -137,22 +117,15 @@ func TestBuildEvent_EndpointsCleaned(t *testing.T) {
 	}
 	sk := nostr.GeneratePrivateKey()
 	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	var content eventContent
-	if err := json.Unmarshal([]byte(ev.Content), &content); err != nil {
-		t.Fatal(err)
-	}
+	err = json.Unmarshal([]byte(ev.Content), &content)
+	require.NoError(t, err)
 	// Trailing-slash result is ambiguous — omitted.
-	if content.Capabilities[0].Endpoint != "" {
-		t.Errorf("endpoint = %q, want empty (ambiguous trailing slash)", content.Capabilities[0].Endpoint)
-	}
+	require.Equal(t, "", content.Capabilities[0].Endpoint)
 	// Exact path is preserved.
-	if content.Capabilities[1].Endpoint != "/v1/status" {
-		t.Errorf("endpoint = %q, want %q", content.Capabilities[1].Endpoint, "/v1/status")
-	}
+	require.Equal(t, "/v1/status", content.Capabilities[1].Endpoint)
 }
 
 func TestBuildEvent_MultipleServices(t *testing.T) {
@@ -164,9 +137,7 @@ func TestBuildEvent_MultipleServices(t *testing.T) {
 	}
 	sk := nostr.GeneratePrivateKey()
 	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	assertPriceTag(t, ev, "read-api", "50", "sats")
 	assertPriceTag(t, ev, "write-api", "200", "sats")
@@ -180,9 +151,7 @@ func TestBuildEvent_WithPicture(t *testing.T) {
 	}
 	sk := nostr.GeneratePrivateKey()
 	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}, Picture: "https://example.com/icon.png"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	assertTag(t, ev, "picture", "https://example.com/icon.png")
 }
@@ -195,17 +164,11 @@ func TestBuildEvent_SignatureValid(t *testing.T) {
 	}
 	sk := nostr.GeneratePrivateKey()
 	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	ok, err := ev.CheckSignature()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !ok {
-		t.Error("signature verification failed")
-	}
+	require.NoError(t, err)
+	require.True(t, ok)
 }
 
 func TestCleanEndpoint(t *testing.T) {
@@ -246,9 +209,7 @@ func TestBuildEvent_NameAboutSplit(t *testing.T) {
 	}
 	sk := nostr.GeneratePrivateKey()
 	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	assertTag(t, ev, "name", "loop-rpc, pool-rpc")
 	assertTag(t, ev, "about", "L402-gated API via Aperture — loop-rpc, pool-rpc")
@@ -264,9 +225,7 @@ func TestBuildEvent_NameTruncation(t *testing.T) {
 	cfg := &config.ApertureConfig{Services: services}
 	sk := nostr.GeneratePrivateKey()
 	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	assertTag(t, ev, "name", "svc-1, svc-2, svc-3 and 4 more")
 }
@@ -281,30 +240,19 @@ func TestBuildEvent_AuthInContent(t *testing.T) {
 	}
 	sk := nostr.GeneratePrivateKey()
 	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	var content eventContent
-	if err := json.Unmarshal([]byte(ev.Content), &content); err != nil {
-		t.Fatal(err)
-	}
-	if len(content.Capabilities) != 3 {
-		t.Fatalf("expected 3 capabilities, got %d", len(content.Capabilities))
-	}
+	err = json.Unmarshal([]byte(ev.Content), &content)
+	require.NoError(t, err)
+	require.Len(t, content.Capabilities, 3)
 
 	// "off" → "none"
-	if content.Capabilities[0].Auth != "none" {
-		t.Errorf("free-api auth = %q, want %q", content.Capabilities[0].Auth, "none")
-	}
+	require.Equal(t, "none", content.Capabilities[0].Auth)
 	// "on" → omitted (empty)
-	if content.Capabilities[1].Auth != "" {
-		t.Errorf("paid-api auth = %q, want empty (default)", content.Capabilities[1].Auth)
-	}
+	require.Equal(t, "", content.Capabilities[1].Auth)
 	// "freebie 3" → "freebie 3"
-	if content.Capabilities[2].Auth != "freebie 3" {
-		t.Errorf("freebie-api auth = %q, want %q", content.Capabilities[2].Auth, "freebie 3")
-	}
+	require.Equal(t, "freebie 3", content.Capabilities[2].Auth)
 }
 
 func TestBuildEvent_TimeoutInContent(t *testing.T) {
@@ -316,21 +264,14 @@ func TestBuildEvent_TimeoutInContent(t *testing.T) {
 	}
 	sk := nostr.GeneratePrivateKey()
 	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	var content eventContent
-	if err := json.Unmarshal([]byte(ev.Content), &content); err != nil {
-		t.Fatal(err)
-	}
+	err = json.Unmarshal([]byte(ev.Content), &content)
+	require.NoError(t, err)
 
-	if content.Capabilities[0].Timeout != 3600 {
-		t.Errorf("timed-api timeout = %d, want 3600", content.Capabilities[0].Timeout)
-	}
-	if content.Capabilities[1].Timeout != 0 {
-		t.Errorf("untimed-api timeout = %d, want 0 (omitted)", content.Capabilities[1].Timeout)
-	}
+	require.Equal(t, int64(3600), content.Capabilities[0].Timeout)
+	require.Equal(t, int64(0), content.Capabilities[1].Timeout)
 }
 
 func TestBuildEvent_CustomTopics(t *testing.T) {
@@ -344,9 +285,7 @@ func TestBuildEvent_CustomTopics(t *testing.T) {
 		PublicUrls: []string{"https://api.example.com"},
 		Topics:     []string{"ai", "inference", "l402"},
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	assertTag(t, ev, "t", "l402")
 	assertTag(t, ev, "t", "api")
@@ -361,9 +300,7 @@ func TestBuildEvent_CustomTopics(t *testing.T) {
 			tCount++
 		}
 	}
-	if tCount != 5 {
-		t.Errorf("expected 5 topic tags (l402 deduped), got %d", tCount)
-	}
+	require.Equal(t, 5, tCount)
 }
 
 func TestBuildEvent_TopicCap(t *testing.T) {
@@ -381,9 +318,7 @@ func TestBuildEvent_TopicCap(t *testing.T) {
 		PublicUrls: []string{"https://api.example.com"},
 		Topics:     topics,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	tCount := 0
 	for _, tag := range ev.Tags {
@@ -409,9 +344,7 @@ func TestBuildEvent_MultipleURLs(t *testing.T) {
 		"https://hns.example",
 	}
 	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: urls})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	// All three urls must appear as separate url tags.
 	for _, u := range urls {
@@ -428,9 +361,7 @@ func TestBuildEvent_MultipleURLs(t *testing.T) {
 			urlCount++
 		}
 	}
-	if urlCount != 3 {
-		t.Errorf("expected 3 url tags, got %d", urlCount)
-	}
+	require.Equal(t, 3, urlCount)
 }
 
 func TestBuildEvent_TooManyURLs(t *testing.T) {
@@ -445,9 +376,7 @@ func TestBuildEvent_TooManyURLs(t *testing.T) {
 		urls[i] = fmt.Sprintf("https://api%d.example.com", i)
 	}
 	_, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: urls})
-	if err == nil {
-		t.Fatal("expected error for 11 URLs, got nil")
-	}
+	require.Error(t, err)
 }
 
 func TestBuildEvent_NoURLs(t *testing.T) {
@@ -458,9 +387,7 @@ func TestBuildEvent_NoURLs(t *testing.T) {
 	}
 	sk := nostr.GeneratePrivateKey()
 	_, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: nil})
-	if err == nil {
-		t.Fatal("expected error for no URLs, got nil")
-	}
+	require.Error(t, err)
 }
 
 func assertTag(t *testing.T, ev *nostr.Event, key, value string) {
@@ -470,7 +397,7 @@ func assertTag(t *testing.T, ev *nostr.Event, key, value string) {
 			return
 		}
 	}
-	t.Errorf("missing tag [%q, %q]", key, value)
+	require.Failf(t, "missing tag", "[%q, %q]", key, value)
 }
 
 func assertPriceTag(t *testing.T, ev *nostr.Event, capability, amount, unit string) {
@@ -480,5 +407,5 @@ func assertPriceTag(t *testing.T, ev *nostr.Event, capability, amount, unit stri
 			return
 		}
 	}
-	t.Errorf("missing price tag [price, %q, %q, %q]", capability, amount, unit)
+	require.Failf(t, "missing price tag", "[price, %q, %q, %q]", capability, amount, unit)
 }

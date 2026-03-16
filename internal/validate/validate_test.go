@@ -1,6 +1,10 @@
 package validate
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
 
 func TestIsPrivateHost(t *testing.T) {
 	private := []string{
@@ -25,9 +29,7 @@ func TestIsPrivateHost(t *testing.T) {
 		"fd00::1",
 	}
 	for _, host := range private {
-		if !IsPrivateHost(host) {
-			t.Errorf("expected %q to be private", host)
-		}
+		require.True(t, IsPrivateHost(host), "expected %q to be private", host)
 	}
 
 	public := []string{
@@ -39,9 +41,7 @@ func TestIsPrivateHost(t *testing.T) {
 		"172.15.0.1",
 	}
 	for _, host := range public {
-		if IsPrivateHost(host) {
-			t.Errorf("expected %q to be public", host)
-		}
+		require.False(t, IsPrivateHost(host), "expected %q to be public", host)
 	}
 }
 
@@ -52,9 +52,7 @@ func TestValidatePublicURL(t *testing.T) {
 		"http://api.example.com:8080",
 	}
 	for _, u := range valid {
-		if err := ValidatePublicURL(u); err != nil {
-			t.Errorf("expected %q to be valid, got: %v", u, err)
-		}
+		require.NoError(t, ValidatePublicURL(u), "expected %q to be valid", u)
 	}
 
 	invalid := []string{
@@ -63,14 +61,10 @@ func TestValidatePublicURL(t *testing.T) {
 		"http://192.168.1.1/api",
 	}
 	for _, u := range invalid {
-		if err := ValidatePublicURL(u); err == nil {
-			t.Errorf("expected %q to be rejected as private", u)
-		}
+		require.Error(t, ValidatePublicURL(u), "expected %q to be rejected as private", u)
 	}
 
-	if err := ValidatePublicURL("ftp://example.com"); err == nil {
-		t.Error("expected ftp:// to be rejected")
-	}
+	require.Error(t, ValidatePublicURL("ftp://example.com"))
 }
 
 func TestIsPrivateHost_ReservedRanges(t *testing.T) {
@@ -88,9 +82,7 @@ func TestIsPrivateHost_ReservedRanges(t *testing.T) {
 		"255.255.255.254",
 	}
 	for _, host := range reserved {
-		if !IsPrivateHost(host) {
-			t.Errorf("expected %q to be private (reserved)", host)
-		}
+		require.True(t, IsPrivateHost(host), "expected %q to be private (reserved)", host)
 	}
 }
 
@@ -101,9 +93,7 @@ func TestIsPrivateHost_IPv6MappedIPv4(t *testing.T) {
 		"::ffff:192.168.1.1",
 	}
 	for _, host := range mapped {
-		if !IsPrivateHost(host) {
-			t.Errorf("expected %q to be private (IPv6 mapped IPv4)", host)
-		}
+		require.True(t, IsPrivateHost(host), "expected %q to be private (IPv6 mapped IPv4)", host)
 	}
 }
 
@@ -114,9 +104,7 @@ func TestValidateRelayURL(t *testing.T) {
 		"wss://nos.lol",
 	}
 	for _, u := range valid {
-		if err := ValidateRelayURL(u); err != nil {
-			t.Errorf("expected %q to be valid relay URL, got: %v", u, err)
-		}
+		require.NoError(t, ValidateRelayURL(u), "expected %q to be valid relay URL", u)
 	}
 
 	invalid := []string{
@@ -129,8 +117,6 @@ func TestValidateRelayURL(t *testing.T) {
 		"ws://token@relay.example.com",
 	}
 	for _, u := range invalid {
-		if err := ValidateRelayURL(u); err == nil {
-			t.Errorf("expected %q to be rejected as invalid relay URL", u)
-		}
+		require.Error(t, ValidateRelayURL(u), "expected %q to be rejected as invalid relay URL", u)
 	}
 }

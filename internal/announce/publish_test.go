@@ -11,6 +11,7 @@ import (
 	"github.com/TheCryptoDonkey/aperture-announce/internal/config"
 	ws "github.com/coder/websocket"
 	"github.com/nbd-wtf/go-nostr"
+	"github.com/stretchr/testify/require"
 )
 
 // mockRelay is a minimal NIP-01 relay that accepts EVENT messages and replies OK.
@@ -74,9 +75,7 @@ func buildTestEvent(t *testing.T) *nostr.Event {
 	}
 	sk := nostr.GeneratePrivateKey()
 	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	return ev
 }
 
@@ -89,15 +88,9 @@ func TestPublish_Success(t *testing.T) {
 
 	results := Publish(context.Background(), ev, []string{relayURL})
 
-	if len(results) != 1 {
-		t.Fatalf("expected 1 result, got %d", len(results))
-	}
-	if !results[0].Success {
-		t.Errorf("expected success, got error: %v", results[0].Error)
-	}
-	if results[0].Relay != relayURL {
-		t.Errorf("relay = %q, want %q", results[0].Relay, relayURL)
-	}
+	require.Len(t, results, 1)
+	require.True(t, results[0].Success, "expected success, got error: %v", results[0].Error)
+	require.Equal(t, relayURL, results[0].Relay)
 }
 
 func TestPublish_ConnectFailure(t *testing.T) {
@@ -106,15 +99,9 @@ func TestPublish_ConnectFailure(t *testing.T) {
 	// Use an unreachable URL
 	results := Publish(context.Background(), ev, []string{"ws://127.0.0.1:1"})
 
-	if len(results) != 1 {
-		t.Fatalf("expected 1 result, got %d", len(results))
-	}
-	if results[0].Success {
-		t.Error("expected failure for unreachable relay")
-	}
-	if results[0].Error == nil {
-		t.Error("expected error to be set")
-	}
+	require.Len(t, results, 1)
+	require.False(t, results[0].Success, "expected failure for unreachable relay")
+	require.NotNil(t, results[0].Error)
 }
 
 func TestPublish_Rejected(t *testing.T) {
@@ -126,12 +113,8 @@ func TestPublish_Rejected(t *testing.T) {
 
 	results := Publish(context.Background(), ev, []string{relayURL})
 
-	if len(results) != 1 {
-		t.Fatalf("expected 1 result, got %d", len(results))
-	}
-	if results[0].Success {
-		t.Error("expected failure when relay rejects event")
-	}
+	require.Len(t, results, 1)
+	require.False(t, results[0].Success, "expected failure when relay rejects event")
 }
 
 func TestPublish_MultipleRelays(t *testing.T) {
@@ -146,17 +129,11 @@ func TestPublish_MultipleRelays(t *testing.T) {
 		"ws://127.0.0.1:1", // unreachable
 	})
 
-	if len(results) != 2 {
-		t.Fatalf("expected 2 results, got %d", len(results))
-	}
+	require.Len(t, results, 2)
 
 	// First should succeed, second should fail
-	if !results[0].Success {
-		t.Errorf("first relay should succeed, got: %v", results[0].Error)
-	}
-	if results[1].Success {
-		t.Error("second relay should fail (unreachable)")
-	}
+	require.True(t, results[0].Success, "first relay should succeed, got: %v", results[0].Error)
+	require.False(t, results[1].Success, "second relay should fail (unreachable)")
 }
 
 func TestPublish_ContextCancelled(t *testing.T) {
@@ -168,9 +145,7 @@ func TestPublish_ContextCancelled(t *testing.T) {
 	results := Publish(ctx, ev, []string{"ws://127.0.0.1:1"})
 
 	// Context already cancelled — should return early without attempting any relay.
-	if len(results) != 0 {
-		t.Fatalf("expected 0 results (early exit), got %d", len(results))
-	}
+	require.Len(t, results, 0)
 }
 
 func TestPublish_EmptyRelayList(t *testing.T) {
@@ -178,7 +153,5 @@ func TestPublish_EmptyRelayList(t *testing.T) {
 
 	results := Publish(context.Background(), ev, []string{})
 
-	if len(results) != 0 {
-		t.Fatalf("expected 0 results for empty relay list, got %d", len(results))
-	}
+	require.Len(t, results, 0)
 }
