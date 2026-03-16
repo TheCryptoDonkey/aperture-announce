@@ -125,6 +125,8 @@ func TestValidateRelayURL(t *testing.T) {
 		"ftp://relay.damus.io",
 		"not-a-url",
 		"wss://",
+		"wss://user:pass@relay.example.com",
+		"ws://token@relay.example.com",
 	}
 	for _, u := range invalid {
 		if err := ValidateRelayURL(u); err == nil {

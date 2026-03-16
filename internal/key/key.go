@@ -39,6 +39,9 @@ func Normalise(k string) string {
 // Persist writes a key to a file with 0600 permissions.
 // Creates parent directories with 0700 if needed.
 func Persist(key, path string) error {
+	if err := Validate(key); err != nil {
+		return fmt.Errorf("refusing to persist invalid key: %w", err)
+	}
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return fmt.Errorf("create key directory: %w", err)
@@ -75,13 +78,41 @@ func Resolve(explicit, keyDir string) (string, error) {
 		return Normalise(k), nil
 	}
 
-	// Generate and persist
+	// Generate new key
 	k, err := Generate()
 	if err != nil {
 		return "", err
 	}
-	if err := Persist(k, path); err != nil {
-		return "", fmt.Errorf("persist auto-generated key: %w", err)
+
+	// Atomically create the file with O_EXCL to prevent TOCTOU races.
+	// If two processes race here, only one will succeed; the loser
+	// retries by loading the winner's key.
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", fmt.Errorf("create key directory: %w", err)
 	}
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	if err != nil {
+		if os.IsExist(err) {
+			// Another process created the file first — load their key.
+			k2, loadErr := Load(path)
+			if loadErr != nil {
+				return "", fmt.Errorf("load racing key file: %w", loadErr)
+			}
+			if err := Validate(k2); err != nil {
+				return "", fmt.Errorf("corrupted key file %s: %w", path, err)
+			}
+			return Normalise(k2), nil
+		}
+		return "", fmt.Errorf("create key file: %w", err)
+	}
+	if _, err := f.WriteString(k + "\n"); err != nil {
+		f.Close()
+		return "", fmt.Errorf("write key file: %w", err)
+	}
+	if err := f.Close(); err != nil {
+		return "", fmt.Errorf("close key file: %w", err)
+	}
+
 	return k, nil
 }

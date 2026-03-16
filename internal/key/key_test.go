@@ -152,3 +152,36 @@ func TestResolve_CorruptedKeyFile(t *testing.T) {
 		t.Error("expected error for corrupted key file")
 	}
 }
+
+func TestPersist_RejectsInvalidKey(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "announce.key")
+	if err := Persist("not-valid", path); err == nil {
+		t.Error("expected error when persisting invalid key")
+	}
+	if err := Persist("", path); err == nil {
+		t.Error("expected error when persisting empty key")
+	}
+}
+
+func TestResolve_RaceProtection(t *testing.T) {
+	// Simulate the race: pre-create the key file between Generate and Persist.
+	// Resolve should detect the existing file and load it instead of failing.
+	dir := t.TempDir()
+	existing, err := Generate()
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(dir, "announce.key")
+	if err := os.WriteFile(path, []byte(existing+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	// Resolve with no explicit key should load the existing file.
+	resolved, err := Resolve("", dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resolved != existing {
+		t.Errorf("expected existing key %q, got %q", existing, resolved)
+	}
+}

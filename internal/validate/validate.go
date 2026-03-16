@@ -78,8 +78,8 @@ func isReserved(ip net.IP) bool {
 	return false
 }
 
-// ValidateRelayURL checks that a relay URL uses the ws:// or wss:// scheme
-// and has a non-empty hostname.
+// ValidateRelayURL checks that a relay URL uses the ws:// or wss:// scheme,
+// has a non-empty hostname, and does not contain embedded credentials.
 func ValidateRelayURL(rawURL string) error {
 	u, err := url.Parse(rawURL)
 	if err != nil {
@@ -90,6 +90,9 @@ func ValidateRelayURL(rawURL string) error {
 	}
 	if u.Hostname() == "" {
 		return fmt.Errorf("relay URL has no hostname: %s", rawURL)
+	}
+	if u.User != nil {
+		return fmt.Errorf("relay URL must not contain credentials: %s", u.Hostname())
 	}
 	return nil
 }
