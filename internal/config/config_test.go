@@ -114,3 +114,31 @@ services: []
 		t.Error("expected error for empty services")
 	}
 }
+
+func TestParseEmptyServiceName(t *testing.T) {
+	yml := `
+services:
+  - name: ""
+    hostregexp: "api.example.com"
+    pathregexp: "/v1/.*"
+    price: 100
+`
+	_, err := Parse([]byte(yml))
+	if err == nil {
+		t.Error("expected error for empty service name")
+	}
+}
+
+func TestParseNegativePrice(t *testing.T) {
+	yml := `
+services:
+  - name: "my-api"
+    hostregexp: "api.example.com"
+    pathregexp: "/v1/.*"
+    price: -100
+`
+	_, err := Parse([]byte(yml))
+	if err == nil {
+		t.Error("expected error for negative price")
+	}
+}

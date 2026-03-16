@@ -52,7 +52,13 @@ func Parse(data []byte) (*ApertureConfig, error) {
 	}
 
 	services := make([]Service, 0, len(raw.Services))
-	for _, rs := range raw.Services {
+	for i, rs := range raw.Services {
+		if rs.Name == "" {
+			return nil, fmt.Errorf("service %d has no name", i)
+		}
+		if rs.Price < 0 {
+			return nil, fmt.Errorf("service %q has negative price: %d", rs.Name, rs.Price)
+		}
 		s := Service{
 			Name:         rs.Name,
 			HostRegexp:   rs.HostRegexp,
