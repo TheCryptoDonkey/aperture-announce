@@ -42,8 +42,7 @@ type rawService struct {
 }
 
 type rawDynPrice struct {
-	Enabled     bool   `yaml:"enabled"`
-	GRPCAddress string `yaml:"grpcaddress"`
+	Enabled bool `yaml:"enabled"`
 }
 
 type rawConfig struct {
