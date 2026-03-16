@@ -1,0 +1,116 @@
+package config
+
+import "testing"
+
+func TestParseSingleService(t *testing.T) {
+	yml := `
+services:
+  - name: "my-api"
+    hostregexp: "api.example.com"
+    pathregexp: "/v1/.*"
+    price: 100
+`
+	cfg, err := Parse([]byte(yml))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg.Services) != 1 {
+		t.Fatalf("expected 1 service, got %d", len(cfg.Services))
+	}
+	s := cfg.Services[0]
+	if s.Name != "my-api" {
+		t.Errorf("name = %q, want %q", s.Name, "my-api")
+	}
+	if s.Price != 100 {
+		t.Errorf("price = %d, want 100", s.Price)
+	}
+	if s.PathRegexp != "/v1/.*" {
+		t.Errorf("pathregexp = %q, want %q", s.PathRegexp, "/v1/.*")
+	}
+}
+
+func TestParseMultipleServices(t *testing.T) {
+	yml := `
+services:
+  - name: "read-api"
+    hostregexp: "api.example.com"
+    pathregexp: "/v1/read"
+    price: 50
+  - name: "write-api"
+    hostregexp: "api.example.com"
+    pathregexp: "/v1/write"
+    price: 200
+`
+	cfg, err := Parse([]byte(yml))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg.Services) != 2 {
+		t.Fatalf("expected 2 services, got %d", len(cfg.Services))
+	}
+}
+
+func TestParseCapabilities(t *testing.T) {
+	yml := `
+services:
+  - name: "my-api"
+    hostregexp: "api.example.com"
+    pathregexp: "/v1/.*"
+    price: 100
+    capabilities: "read,write,admin"
+`
+	cfg, err := Parse([]byte(yml))
+	if err != nil {
+		t.Fatal(err)
+	}
+	caps := cfg.Services[0].Capabilities
+	if len(caps) != 3 {
+		t.Fatalf("expected 3 capabilities, got %d", len(caps))
+	}
+	if caps[0] != "read" || caps[1] != "write" || caps[2] != "admin" {
+		t.Errorf("capabilities = %v", caps)
+	}
+}
+
+func TestParseDynamicPricing(t *testing.T) {
+	yml := `
+services:
+  - name: "dynamic-api"
+    hostregexp: "api.example.com"
+    pathregexp: "/v1/.*"
+    dynamicprice:
+      enabled: true
+      grpcaddress: "localhost:10010"
+`
+	cfg, err := Parse([]byte(yml))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := cfg.Services[0]
+	if !s.DynamicPrice {
+		t.Error("expected DynamicPrice to be true")
+	}
+	if s.Price != 0 {
+		t.Errorf("expected Price 0 for dynamic, got %d", s.Price)
+	}
+}
+
+func TestParseNoServices(t *testing.T) {
+	yml := `
+listenaddr: "localhost:8081"
+`
+	_, err := Parse([]byte(yml))
+	if err == nil {
+		t.Error("expected error for config with no services")
+	}
+}
+
+func TestParseEmptyServices(t *testing.T) {
+	yml := `
+services: []
+`
+	_, err := Parse([]byte(yml))
+	if err == nil {
+		t.Error("expected error for empty services")
+	}
+}
