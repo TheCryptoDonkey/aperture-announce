@@ -86,6 +86,17 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Parsed %d service(s) from %s\n", len(cfg.Services), *configPath)
 	}
 
+	// Warn about dynamic pricing — announced prices may not reflect actual costs.
+	for _, svc := range cfg.Services {
+		if svc.DynamicPrice {
+			if svc.Price > 0 {
+				fmt.Fprintf(os.Stderr, "Warning: service %q uses dynamic pricing — announced price of %d sats is the static fallback; actual price is determined at request time\n", svc.Name, svc.Price)
+			} else {
+				fmt.Fprintf(os.Stderr, "Warning: service %q uses dynamic pricing with no static price — announced price of 0 sats may not reflect actual cost\n", svc.Name)
+			}
+		}
+	}
+
 	// Resolve key
 	home, err := os.UserHomeDir()
 	if err != nil && *announceKey == "" {
@@ -99,7 +110,10 @@ func main() {
 
 	// Build and publish (loop or one-shot)
 	run := func() {
-		ev, err := announce.BuildEvent(sk, cfg, *publicURL, *picture)
+		ev, err := announce.BuildEvent(sk, cfg, announce.BuildOptions{
+			PublicURL: *publicURL,
+			Picture:   *picture,
+		})
 		if err != nil {
 			fatal("build event: %v", err)
 		}

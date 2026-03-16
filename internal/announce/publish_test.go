@@ -73,7 +73,7 @@ func buildTestEvent(t *testing.T) *nostr.Event {
 		},
 	}
 	sk := nostr.GeneratePrivateKey()
-	ev, err := BuildEvent(sk, cfg, "https://api.example.com", "")
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicURL: "https://api.example.com"})
 	if err != nil {
 		t.Fatal(err)
 	}

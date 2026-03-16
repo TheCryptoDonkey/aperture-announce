@@ -15,7 +15,7 @@ func TestBuildEvent_SingleService(t *testing.T) {
 		},
 	}
 	sk := nostr.GeneratePrivateKey()
-	ev, err := BuildEvent(sk, cfg, "https://api.example.com", "")
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicURL: "https://api.example.com"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func TestBuildEvent_WithCapabilities(t *testing.T) {
 		},
 	}
 	sk := nostr.GeneratePrivateKey()
-	ev, err := BuildEvent(sk, cfg, "https://api.example.com", "")
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicURL: "https://api.example.com"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func TestBuildEvent_DynamicPricing(t *testing.T) {
 		},
 	}
 	sk := nostr.GeneratePrivateKey()
-	ev, err := BuildEvent(sk, cfg, "https://api.example.com", "")
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicURL: "https://api.example.com"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +87,7 @@ func TestBuildEvent_MultipleServices(t *testing.T) {
 		},
 	}
 	sk := nostr.GeneratePrivateKey()
-	ev, err := BuildEvent(sk, cfg, "https://api.example.com", "")
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicURL: "https://api.example.com"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +103,7 @@ func TestBuildEvent_WithPicture(t *testing.T) {
 		},
 	}
 	sk := nostr.GeneratePrivateKey()
-	ev, err := BuildEvent(sk, cfg, "https://api.example.com", "https://example.com/icon.png")
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicURL: "https://api.example.com", Picture: "https://example.com/icon.png"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,7 +118,7 @@ func TestBuildEvent_SignatureValid(t *testing.T) {
 		},
 	}
 	sk := nostr.GeneratePrivateKey()
-	ev, err := BuildEvent(sk, cfg, "https://api.example.com", "")
+	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicURL: "https://api.example.com"})
 	if err != nil {
 		t.Fatal(err)
 	}

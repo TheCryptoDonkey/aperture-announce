@@ -63,9 +63,16 @@ func CleanEndpoint(regex string) string {
 	return s
 }
 
+// BuildOptions holds optional parameters for event construction.
+type BuildOptions struct {
+	PublicURL string
+	Picture   string
+	Topics    []string
+}
+
 // BuildEvent creates and signs a kind 31402 Nostr event from an Aperture config.
-func BuildEvent(secretKey string, cfg *config.ApertureConfig, publicURL string, picture string) (*nostr.Event, error) {
-	u, err := url.Parse(publicURL)
+func BuildEvent(secretKey string, cfg *config.ApertureConfig, opts BuildOptions) (*nostr.Event, error) {
+	u, err := url.Parse(opts.PublicURL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid public URL: %w", err)
 	}
@@ -85,7 +92,7 @@ func BuildEvent(secretKey string, cfg *config.ApertureConfig, publicURL string, 
 	tags := nostr.Tags{
 		{"d", identifier},
 		{"name", about},
-		{"url", publicURL},
+		{"url", opts.PublicURL},
 		{"about", about},
 		{"pmi", "bitcoin-lightning-bolt11"},
 		{"t", "l402"},
@@ -93,8 +100,8 @@ func BuildEvent(secretKey string, cfg *config.ApertureConfig, publicURL string, 
 		{"t", "aperture"},
 	}
 
-	if picture != "" {
-		tags = append(tags, nostr.Tag{"picture", picture})
+	if opts.Picture != "" {
+		tags = append(tags, nostr.Tag{"picture", opts.Picture})
 	}
 
 	var caps []capability
