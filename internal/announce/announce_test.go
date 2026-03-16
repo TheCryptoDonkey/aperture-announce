@@ -25,7 +25,7 @@ func TestBuildEvent_SingleService(t *testing.T) {
 	assertTag(t, ev, "d", "aperture-api.example.com")
 	assertTag(t, ev, "url", "https://api.example.com")
 	assertTag(t, ev, "pmi", "bitcoin-lightning-bolt11")
-	assertPriceTag(t, ev, "my-api", "100", "sats")
+	assertPriceTag(t, ev, "my-api", "100")
 }
 
 func TestBuildEvent_WithCapabilities(t *testing.T) {
@@ -43,8 +43,8 @@ func TestBuildEvent_WithCapabilities(t *testing.T) {
 	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
 	require.NoError(t, err)
 
-	assertPriceTag(t, ev, "read", "100", "sats")
-	assertPriceTag(t, ev, "write", "100", "sats")
+	assertPriceTag(t, ev, "read", "100")
+	assertPriceTag(t, ev, "write", "100")
 
 	var content struct {
 		Capabilities []struct {
@@ -96,7 +96,7 @@ func TestBuildEvent_DynamicPricingWithFallback(t *testing.T) {
 	require.NoError(t, err)
 
 	// Should still have a price tag (static fallback)
-	assertPriceTag(t, ev, "api", "500", "sats")
+	assertPriceTag(t, ev, "api", "500")
 
 	// Should have dynamic-pricing topic
 	assertTag(t, ev, "t", "dynamic-pricing")
@@ -139,8 +139,8 @@ func TestBuildEvent_MultipleServices(t *testing.T) {
 	ev, err := BuildEvent(sk, cfg, BuildOptions{PublicUrls: []string{"https://api.example.com"}})
 	require.NoError(t, err)
 
-	assertPriceTag(t, ev, "read-api", "50", "sats")
-	assertPriceTag(t, ev, "write-api", "200", "sats")
+	assertPriceTag(t, ev, "read-api", "50")
+	assertPriceTag(t, ev, "write-api", "200")
 }
 
 func TestBuildEvent_WithPicture(t *testing.T) {
@@ -400,12 +400,12 @@ func assertTag(t *testing.T, ev *nostr.Event, key, value string) {
 	require.Failf(t, "missing tag", "[%q, %q]", key, value)
 }
 
-func assertPriceTag(t *testing.T, ev *nostr.Event, capability, amount, unit string) {
+func assertPriceTag(t *testing.T, ev *nostr.Event, capability, amount string) {
 	t.Helper()
 	for _, tag := range ev.Tags {
-		if len(tag) >= 4 && tag[0] == "price" && tag[1] == capability && tag[2] == amount && tag[3] == unit {
+		if len(tag) >= 4 && tag[0] == "price" && tag[1] == capability && tag[2] == amount && tag[3] == "sats" {
 			return
 		}
 	}
-	require.Failf(t, "missing price tag", "[price, %q, %q, %q]", capability, amount, unit)
+	require.Failf(t, "missing price tag", "[price, %q, %q, sats]", capability, amount)
 }

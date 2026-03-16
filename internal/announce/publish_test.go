@@ -25,7 +25,7 @@ func mockRelay(t *testing.T, acceptEvent bool) *httptest.Server {
 			t.Logf("mock relay accept error: %v", err)
 			return
 		}
-		defer c.CloseNow()
+		defer func() { _ = c.CloseNow() }()
 
 		for {
 			_, msg, err := c.Read(r.Context())
