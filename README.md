@@ -2,6 +2,7 @@
 
 [![MIT licence](https://img.shields.io/badge/licence-MIT-blue.svg)](./LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.22+-00ADD8)](https://golang.org/)
+[![CI](https://github.com/TheCryptoDonkey/aperture-announce/actions/workflows/ci.yml/badge.svg)](https://github.com/TheCryptoDonkey/aperture-announce/actions/workflows/ci.yml)
 
 Announce your [Aperture](https://github.com/lightninglabs/aperture) L402 services on Nostr for decentralised discovery.
 
@@ -57,6 +58,35 @@ aperture-announce \
 ```
 
 This prints the event JSON to stdout without connecting to any relay.
+
+<details>
+<summary>Example output</summary>
+
+Using `testdata/sample-conf.yaml`:
+
+```json
+{
+  "kind": 31402,
+  "tags": [
+    ["d", "aperture-api.example.com"],
+    ["name", "L402-gated API via Aperture — loop-rpc, pool-rpc"],
+    ["url", "https://api.example.com"],
+    ["about", "L402-gated API via Aperture — loop-rpc, pool-rpc"],
+    ["pmi", "bitcoin-lightning-bolt11"],
+    ["t", "l402"],
+    ["t", "api"],
+    ["t", "aperture"],
+    ["price", "quote", "500", "sats"],
+    ["price", "swap", "500", "sats"],
+    ["price", "pool-rpc", "1000", "sats"]
+  ],
+  "content": "{\"capabilities\":[{\"name\":\"quote\",\"description\":\"quote via loop-rpc\",\"endpoint\":\"/v1/loop/.*\"},{\"name\":\"swap\",\"description\":\"swap via loop-rpc\",\"endpoint\":\"/v1/loop/.*\"},{\"name\":\"pool-rpc\",\"description\":\"Access pool-rpc\",\"endpoint\":\"/v1/pool/.*\"}]}"
+}
+```
+
+(Fields `id`, `pubkey`, `created_at`, and `sig` omitted — they vary per run.)
+
+</details>
 
 ## Ecosystem
 
