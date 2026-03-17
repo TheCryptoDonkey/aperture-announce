@@ -100,7 +100,7 @@ Using `testdata/sample-conf.yaml`:
     ["d", "aperture-api.example.com"],
     ["name", "loop-rpc, pool-rpc"],
     ["about", "L402-gated API via Aperture — loop-rpc, pool-rpc"],
-    ["pmi", "bitcoin-lightning-bolt11"],
+    ["pmi", "l402", "lightning"],
     ["url", "https://api.example.com"],
     ["price", "quote", "500", "sats"],
     ["price", "swap", "500", "sats"],

@@ -50,9 +50,9 @@
       "prefixItems": [{ "const": "about" }, { "type": "string" }]
     },
     "pmi_tag": {
-      "description": "Payment method indicator. Always 'bitcoin-lightning-bolt11' for Aperture.",
+      "description": "Payment method indicator. For Aperture: ['pmi', 'l402', 'lightning'].",
       "type": "array",
-      "prefixItems": [{ "const": "pmi" }, { "const": "bitcoin-lightning-bolt11" }]
+      "prefixItems": [{ "const": "pmi" }, { "const": "l402" }, { "const": "lightning" }]
     },
     "t_tag": {
       "description": "Topic tag for discoverability (l402, api, aperture).",

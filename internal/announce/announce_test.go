@@ -24,7 +24,7 @@ func TestBuildEvent_SingleService(t *testing.T) {
 
 	assertTag(t, ev, "d", "aperture-api.example.com")
 	assertTag(t, ev, "url", "https://api.example.com")
-	assertTag(t, ev, "pmi", "bitcoin-lightning-bolt11")
+	assertTagSlice(t, ev, "pmi", []string{"pmi", "l402", "lightning"})
 	assertPriceTag(t, ev, "my-api", "100")
 }
 
@@ -398,6 +398,27 @@ func assertTag(t *testing.T, ev *nostr.Event, key, value string) {
 		}
 	}
 	require.Failf(t, "missing tag", "[%q, %q]", key, value)
+}
+
+func assertTagSlice(t *testing.T, ev *nostr.Event, key string, want []string) {
+	t.Helper()
+	for _, tag := range ev.Tags {
+		if len(tag) >= 1 && tag[0] == key {
+			if len(tag) == len(want) {
+				match := true
+				for i, v := range want {
+					if tag[i] != v {
+						match = false
+						break
+					}
+				}
+				if match {
+					return
+				}
+			}
+		}
+	}
+	require.Failf(t, "missing tag", "%v", want)
 }
 
 func assertPriceTag(t *testing.T, ev *nostr.Event, capability, amount string) {

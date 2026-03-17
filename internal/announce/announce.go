@@ -134,7 +134,7 @@ func BuildEvent(secretKey string, cfg *config.ApertureConfig, opts BuildOptions)
 		{"d", identifier},
 		{"name", name},
 		{"about", about},
-		{"pmi", "bitcoin-lightning-bolt11"},
+		{"pmi", "l402", "lightning"},
 	}
 
 	// Emit one url tag per endpoint — agents try each in order.

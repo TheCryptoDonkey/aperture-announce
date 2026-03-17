@@ -14,7 +14,7 @@ Kind 31402 is a **replaceable event** (NIP-33). The `d` tag serves as the unique
 | `name` | `["name", "<service-name>"]` | Short service name (e.g. `loop-rpc`) |
 | `url` | `["url", "<public-url>"]` | The URL agents use to reach the service |
 | `about` | `["about", "<description>"]` | Longer human-readable description of the service |
-| `pmi` | `["pmi", "bitcoin-lightning-bolt11"]` | Payment method indicator. Always Lightning for Aperture |
+| `pmi` | `["pmi", "l402", "lightning"]` | Payment method indicator. L402 Lightning for Aperture |
 | `t` | `["t", "<topic>"]` | Topic tags: `l402`, `api`, `aperture`, plus any custom topics |
 | `price` | `["price", "<cap>", "<amount>", "<currency>"]` | Positional price tag per capability. Omitted for dynamically priced capabilities with no static fallback |
 | `picture` | `["picture", "<url>"]` | Optional service icon URL |
