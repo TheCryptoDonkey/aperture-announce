@@ -1,0 +1,22 @@
+version: 2
+updates:
+  # Go modules — aperture-announce
+  - package-ecosystem: gomod
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+  # GitHub Actions references in .github/workflows. Monthly is
+  # frequent enough; a weekly cadence would produce mostly trivial
+  # SHA bumps.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: chore
+      include: scope
